@@ -1,0 +1,667 @@
+  
+def runtimetest():  
+  shape = len(Z), len(Z[0])
+  N = [[0,]*(shape[0]+2)  for i in range(shape[1]+2)]
+  for x in range(1,shape[0]-1):
+    for y in range(1,shape[1]-1):
+      N[x][y] = Z[x-1][y-1]+Z[x][y-1]+Z[x+1][y-1] \
+        + Z[x-1][y]            +Z[x+1][y]   \
+        + Z[x-1][y+1]+Z[x][y+1]+Z[x+1][y+1]
+  for x in range(1,shape[0]-1):
+    for y in range(1,shape[1]-1):
+      if Z[x][y] == 0 and N[x][y] == 3:
+        Z[x][y] = 1
+      elif Z[x][y] == 1 and not N[x][y] in [2,3]:
+        Z[x][y] = 0
+  return Z
+
+  pg.init()
+  clock = pg.time.Clock()
+  running = True
+  window = pg.display.set_mode((640, 480))
+  window.fill((255, 255, 255))
+  btn = pg.Rect(0, 0, 100, 30)
+  rect1 = pg.Rect(0, 30, 100, 100)
+
+  while running:
+      clock.tick(60)
+      window.fill((255, 255, 255))
+      for e in pg.event.get():
+          if e.type == pg.MOUSEBUTTONDOWN:
+              (mouseX, mouseY) = pg.mouse.get_pos()
+              if(btn.collidepoint((mouseX, mouseY))):
+                  rect1.x = rect1.x + 1
+          if e.type == pg.QUIT:
+              running = False
+      pg.draw.rect(window, (255, 0, 255), rect1, 1)
+      pg.draw.rect(window, (0, 255, 255), btn)
+
+      pg.display.flip()
+  hypothesis.settings.register_profile(
+    name="np.test() profile",
+    deadline=None, print_blob=True, database=None, derandomize=True,
+    suppress_health_check=hypothesis.HealthCheck.all(),
+  )
+def pytest_configure(config):
+    config.addinivalue_line("markers",
+        "valgrind_error: Tests that are known to error under valgrind.")
+    config.addinivalue_line("markers",
+        "leaks_references: Tests that are known to leak references.")
+    config.addinivalue_line("markers",
+        "slow: Tests that are very slow.")
+    config.addinivalue_line("markers",
+        "slow_pypy: Tests that are very slow on pypy.")
+
+
+def pytest_addoption(parser):
+    parser.addoption("--available-memory", action="store", default=None,
+                     help=("Set amount of memory available for running the "
+                           "test suite. This can result to tests requiring "
+                           "especially large amounts of memory to be skipped. "
+                           "Equivalent to setting environment variable "
+                           "NPY_AVAILABLE_MEM. Default: determined"
+                           "automatically."))
+
+
+def pytest_sessionstart(session):
+    available_mem = session.config.getoption('available_memory')
+    if available_mem is not None:
+        os.environ['NPY_AVAILABLE_MEM'] = available_mem
+
+
+def pytest_itemcollected(item):
+    """
+    Check FPU precision mode was not changed during test collection.
+    The clumsy way we do it here is mainly necessary because numpy
+    still uses yield tests, which can execute code at test collection
+    time.
+    """
+    global _old_fpu_mode
+
+    mode = get_fpu_mode()
+
+    if _old_fpu_mode is None:
+        _old_fpu_mode = mode
+    elif mode != _old_fpu_mode:
+        _collect_results[item] = (_old_fpu_mode, mode)
+        _old_fpu_mode = mode
+import sys, os, re, time, traceback, tempfile, subprocess, codecs, locale, unicodedata, copy
+
+
+VERSION = '8.6.10'     
+
+MIN_PYTHON_VERSION = '2.6'  
+
+
+DEFAULT_BACKEND = 'html'
+DEFAULT_DOCTYPE = 'article'
+
+SUBS_OPTIONS = ('specialcharacters','quotes','specialwords',
+    'replacements', 'attributes','macros','callouts','normal','verbatim',
+    'none','replacements2','replacements3')
+SUBS_NORMAL = ('specialcharacters','quotes','attributes',
+    'specialwords','replacements','macros','replacements2')
+SUBS_VERBATIM = ('specialcharacters','callouts')       
+class InsensitiveDict(dict):
+    """
+    Like a dictionary except key access is case insensitive.
+    Keys are stored in lower case.
+    """
+    def __getitem__(self, key):
+        return dict.__getitem__(self, key.lower())
+    def __setitem__(self, key, value):
+        dict.__setitem__(self, key.lower(), value)
+    def has_key(self, key):
+        return dict.has_key(self,key.lower())
+    def get(self, key, default=None):
+        return dict.get(self, key.lower(), default)
+    def update(self, dict):
+        for k,v in dict.items():
+            self[k] = v
+    def setdefault(self, key, default = None):
+        return dict.setdefault(self, key.lower(), default)
+
+
+class Trace(object):
+    """
+    Used in conjunction with the 'trace' attribute to generate diagnostic
+    output. There is a single global instance of this class named trace.
+    """
+    SUBS_NAMES = ('specialcharacters','quotes','specialwords',
+                  'replacements', 'attributes','macros','callouts',
+                  'replacements2','replacements3')
+    def __init__(self):
+        self.name_re = ''        # Regexp pattern to match trace names.
+        self.linenos = True
+        self.offset = 0
+    def __call__(self, name, before, after=None):
+        """
+        Print trace message if tracing is on and the trace 'name' matches the
+        document 'trace' attribute (treated as a regexp).
+        'before' is the source text before substitution; 'after' text is the
+        source text after substitutuion.
+        The 'before' and 'after' messages are only printed if they differ.
+        """
+        name_re = document.attributes.get('trace')
+        if name_re == 'subs':    # Alias for all the inline substitutions.
+            name_re = '|'.join(self.SUBS_NAMES)
+        self.name_re = name_re
+        if self.name_re is not None:
+            msg = message.format(name, 'TRACE: ', self.linenos, offset=self.offset)
+            if before != after and re.match(self.name_re,name):
+                if is_array(before):
+                    before = '\n'.join(before)
+                if after is None:
+                    msg += '\n%s\n' % before
+                else:
+                    if is_array(after):
+                        after = '\n'.join(after)
+                    msg += '\n<<<\n%s\n>>>\n%s\n' % (before,after)
+                message.stderr(msg)
+
+class Message:
+    """
+    Message functions.
+    """
+    PROG = os.path.basename(os.path.splitext(__file__)[0])
+
+    def __init__(self):
+        # Set to True or False to globally override line numbers method
+        # argument. Has no effect when set to None.
+        self.linenos = None
+        self.messages = []
+        self.prev_msg = ''
+
+    def stdout(self,msg):
+        print(msg)
+
+    def stderr(self,msg=''):
+        if msg == self.prev_msg:  # Suppress repeated messages.
+            return
+        self.messages.append(msg)
+        if __name__ == '__main__':
+            sys.stderr.write('%s: %s%s' % (self.PROG, msg, os.linesep))
+        self.prev_msg = msg
+
+    def verbose(self, msg,linenos=True):
+        if config.verbose:
+            msg = self.format(msg,linenos=linenos)
+            self.stderr(msg)
+
+    def warning(self, msg,linenos=True,offset=0):
+        msg = self.format(msg,'WARNING: ',linenos,offset=offset)
+        document.has_warnings = True
+        self.stderr(msg)
+
+    def deprecated(self, msg, linenos=True):
+        msg = self.format(msg, 'DEPRECATED: ', linenos)
+        self.stderr(msg)
+
+    def format(self, msg, prefix='', linenos=True, cursor=None, offset=0):
+        """Return formatted message string."""
+        if self.linenos is not False and ((linenos or self.linenos) and reader.cursor):
+            if cursor is None:
+                cursor = reader.cursor
+            prefix += '%s: line %d: ' % (os.path.basename(cursor[0]),cursor[1]+offset)
+        return prefix + msg
+
+    def error(self, msg, cursor=None, halt=False):
+        """
+        Report fatal error.
+        If halt=True raise EAsciiDoc exception.
+        If halt=False don't exit application, continue in the hope of reporting
+        all fatal errors finishing with a non-zero exit code.
+        """
+
+class InsensitiveDict(dict):
+    """
+    Like a dictionary except key access is case insensitive.
+    Keys are stored in lower case.
+    """
+    def __getitem__(self, key):
+        return dict.__getitem__(self, key.lower())
+    def __setitem__(self, key, value):
+        dict.__setitem__(self, key.lower(), value)
+    def has_key(self, key):
+        return dict.has_key(self,key.lower())
+    def get(self, key, default=None):
+        return dict.get(self, key.lower(), default)
+    def update(self, dict):
+        for k,v in dict.items():
+            self[k] = v
+    def setdefault(self, key, default = None):
+        return dict.setdefault(self, key.lower(), default)
+
+
+class Trace(object):
+    """
+    Used in conjunction with the 'trace' attribute to generate diagnostic
+    output. There is a single global instance of this class named trace.
+    """
+    SUBS_NAMES = ('specialcharacters','quotes','specialwords',
+                  'replacements', 'attributes','macros','callouts',
+                  'replacements2','replacements3')
+    def __init__(self):
+        self.name_re = ''        # Regexp pattern to match trace names.
+        self.linenos = True
+        self.offset = 0
+    def __call__(self, name, before, after=None):
+        """
+        Print trace message if tracing is on and the trace 'name' matches the
+        document 'trace' attribute (treated as a regexp).
+        'before' is the source text before substitution; 'after' text is the
+        source text after substitutuion.
+        The 'before' and 'after' messages are only printed if they differ.
+        """
+        name_re = document.attributes.get('trace')
+        if name_re == 'subs':    # Alias for all the inline substitutions.
+            name_re = '|'.join(self.SUBS_NAMES)
+        self.name_re = name_re
+        if self.name_re is not None:
+            msg = message.format(name, 'TRACE: ', self.linenos, offset=self.offset)
+            if before != after and re.match(self.name_re,name):
+                if is_array(before):
+                    before = '\n'.join(before)
+                if after is None:
+                    msg += '\n%s\n' % before
+                else:
+                    if is_array(after):
+                        after = '\n'.join(after)
+                    msg += '\n<<<\n%s\n>>>\n%s\n' % (before,after)
+                message.stderr(msg)
+
+class Message:
+    """
+    Message functions.
+    """
+    PROG = os.path.basename(os.path.splitext(__file__)[0])
+
+    def __init__(self):
+        # Set to True or False to globally override line numbers method
+        # argument. Has no effect when set to None.
+        self.linenos = None
+        self.messages = []
+        self.prev_msg = ''
+
+    def stdout(self,msg):
+        print(msg)
+
+    def stderr(self,msg=''):
+        if msg == self.prev_msg:  # Suppress repeated messages.
+            return
+        self.messages.append(msg)
+        if __name__ == '__main__':
+            sys.stderr.write('%s: %s%s' % (self.PROG, msg, os.linesep))
+        self.prev_msg = msg
+
+    def verbose(self, msg,linenos=True):
+        if config.verbose:
+            msg = self.format(msg,linenos=linenos)
+            self.stderr(msg)
+
+    def warning(self, msg,linenos=True,offset=0):
+        msg = self.format(msg,'WARNING: ',linenos,offset=offset)
+        document.has_warnings = True
+        self.stderr(msg)
+
+    def deprecated(self, msg, linenos=True):
+        msg = self.format(msg, 'DEPRECATED: ', linenos)
+        self.stderr(msg)
+
+    def format(self, msg, prefix='', linenos=True, cursor=None, offset=0):
+        """Return formatted message string."""
+        if self.linenos is not False and ((linenos or self.linenos) and reader.cursor):
+            if cursor is None:
+                cursor = reader.cursor
+            prefix += '%s: line %d: ' % (os.path.basename(cursor[0]),cursor[1]+offset)
+        return prefix + msg
+
+    def error(self, msg, cursor=None, halt=False):
+        """
+        Report fatal error.
+        If halt=True raise EAsciiDoc exception.
+        If halt=False don't exit application, continue in the hope of reporting
+        all fatal errors finishing with a non-zero exit code.
+class InsensitiveDict(dict):
+    """
+   # Like a dictionary except key access is case insensitive.
+    #Keys are stored in lower case.
+    """
+    def __getitem__(self, key):
+        return dict.__getitem__(self, key.lower())
+    def __setitem__(self, key, value):
+        dict.__setitem__(self, key.lower(), value)
+    def has_key(self, key):
+        return dict.has_key(self,key.lower())
+    def get(self, key, default=None):
+        return dict.get(self, key.lower(), default)
+    def update(self, dict):
+        for k,v in dict.items():
+            self[k] = v
+    def setdefault(self, key, default = None):
+        return dict.setdefault(self, key.lower(), default)
+
+
+class Trace(object):
+    """
+  #  Used in conjunction with the 'trace' attribute to generate diagnostic
+   # output. There is a single global instance of this class named trace.
+    
+    SUBS_NAMES = ('specialcharacters','quotes','specialwords',
+                  'replacements', 'attributes','macros','callouts',
+                  'replacements2','replacements3')
+    def __init__(self):
+        self.name_re = ''        # Regexp pattern to match trace names.
+        self.linenos = True
+        self.offset = 0
+    def __call__(self, name, before, after=None):
+        
+       # Print trace message if tracing is on and the trace 'name' matches the
+        #document 'trace' attribute (treated as a regexp).
+        #'before' is the source text before substitution; 'after' text is the
+        #source text after substitutuion.
+        #The 'before' and 'after' messages are only printed if they differ.
+        
+        name_re = document.attributes.get('trace')
+        if name_re == 'subs':    # Alias for all the inline substitutions.
+            name_re = '|'.join(self.SUBS_NAMES)
+        self.name_re = name_re
+        if self.name_re is not None:
+            msg = message.format(name, 'TRACE: ', self.linenos, offset=self.offset)
+            if before != after and re.match(self.name_re,name):
+                if is_array(before):
+                    before = '\n'.join(before)
+                if after is None:
+                    msg += '\n%s\n' % before
+                else:
+                    if is_array(after):
+                        after = '\n'.join(after)
+                    msg += '\n<<<\n%s\n>>>\n%s\n' % (before,after)
+                message.stderr(msg)
+
+class Message:
+    """
+    Message functions.
+    """
+    PROG = os.path.basename(os.path.splitext(__file__)[0])
+
+    def __init__(self):
+        # Set to True or False to globally override line numbers method
+        # argument. Has no effect when set to None.
+        self.linenos = None
+        self.messages = []
+        self.prev_msg = ''
+
+    def stdout(self,msg):
+        print(msg)
+
+    def stderr(self,msg=''):
+        if msg == self.prev_msg:  # Suppress repeated messages.
+            return
+        self.messages.append(msg)
+        if __name__ == '__main__':
+            sys.stderr.write('%s: %s%s' % (self.PROG, msg, os.linesep))
+        self.prev_msg = msg
+
+    def verbose(self, msg,linenos=True):
+        if config.verbose:
+            msg = self.format(msg,linenos=linenos)
+            self.stderr(msg)
+
+    def warning(self, msg,linenos=True,offset=0):
+        msg = self.format(msg,'WARNING: ',linenos,offset=offset)
+        document.has_warnings = True
+        self.stderr(msg)
+
+    def deprecated(self, msg, linenos=True):
+        msg = self.format(msg, 'DEPRECATED: ', linenos)
+        self.stderr(msg)
+
+    def format(self, msg, prefix='', linenos=True, cursor=None, offset=0):
+        """Return formatted message string."""
+        if self.linenos is not False and ((linenos or self.linenos) and reader.cursor):
+            if cursor is None:
+                cursor = reader.cursor
+            prefix += '%s: line %d: ' % (os.path.basename(cursor[0]),cursor[1]+offset)
+        return prefix + msg
+
+    def error(self, msg, cursor=None, halt=False):
+        """
+        Report fatal error.
+        If halt=True raise EAsciiDoc exception.
+        If halt=False don't exit application, continue in the hope of reporting
+        all fatal errors finishing with a non-zero exit code.
+        """
+class InsensitiveDict(dict):
+    
+    #Like a dictionary except key access is case insensitive.
+   # Keys are stored in lower case.
+    """
+    def __getitem__(self, key):
+        return dict.__getitem__(self, key.lower())
+    def __setitem__(self, key, value):
+        dict.__setitem__(self, key.lower(), value)
+    def has_key(self, key):
+        return dict.has_key(self,key.lower())
+    def get(self, key, default=None):
+        return dict.get(self, key.lower(), default)
+    def update(self, dict):
+        for k,v in dict.items():
+            self[k] = v
+    def setdefault(self, key, default = None):
+        return dict.setdefault(self, key.lower(), default)
+
+
+class Trace(object):
+    """
+    #Used in conjunction with the 'trace' attribute to generate diagnostic
+    #output. There is a single global instance of this class named trace.
+    
+    SUBS_NAMES = ('specialcharacters','quotes','specialwords',
+                  'replacements', 'attributes','macros','callouts',
+                  'replacements2','replacements3')
+    def __init__(self):
+        self.name_re = ''        # Regexp pattern to match trace names.
+        self.linenos = True
+        self.offset = 0
+    def __call__(self, name, before, after=None):
+        """
+        Print trace message if tracing is on and the trace 'name' matches the
+        document 'trace' attribute (treated as a regexp).
+        'before' is the source text before substitution; 'after' text is the
+        source text after substitutuion.
+        The 'before' and 'after' messages are only printed if they differ.
+        """
+        name_re = document.attributes.get('trace')
+        if name_re == 'subs':    # Alias for all the inline substitutions.
+            name_re = '|'.join(self.SUBS_NAMES)
+        self.name_re = name_re
+        if self.name_re is not None:
+            msg = message.format(name, 'TRACE: ', self.linenos, offset=self.offset)
+            if before != after and re.match(self.name_re,name):
+                if is_array(before):
+                    before = '\n'.join(before)
+                if after is None:
+                    msg += '\n%s\n' % before
+                else:
+                    if is_array(after):
+                        after = '\n'.join(after)
+                    msg += '\n<<<\n%s\n>>>\n%s\n' % (before,after)
+                message.stderr(msg)
+
+class Message:
+    """
+    Message functions.
+    """
+    PROG = os.path.basename(os.path.splitext(__file__)[0])
+
+    def __init__(self):
+        # Set to True or False to globally override line numbers method
+        # argument. Has no effect when set to None.
+        self.linenos = None
+        self.messages = []
+        self.prev_msg = ''
+
+    def stdout(self,msg):
+        print(msg)
+
+    def stderr(self,msg=''):
+        if msg == self.prev_msg:  # Suppress repeated messages.
+            return
+        self.messages.append(msg)
+        if __name__ == '__main__':
+            sys.stderr.write('%s: %s%s' % (self.PROG, msg, os.linesep))
+        self.prev_msg = msg
+
+    def verbose(self, msg,linenos=True):
+        if config.verbose:
+            msg = self.format(msg,linenos=linenos)
+            self.stderr(msg)
+
+    def warning(self, msg,linenos=True,offset=0):
+        msg = self.format(msg,'WARNING: ',linenos,offset=offset)
+        document.has_warnings = True
+        self.stderr(msg)
+
+    def deprecated(self, msg, linenos=True):
+        msg = self.format(msg, 'DEPRECATED: ', linenos)
+        self.stderr(msg)
+
+    def format(self, msg, prefix='', linenos=True, cursor=None, offset=0):
+        """Return formatted message string."""
+        if self.linenos is not False and ((linenos or self.linenos) and reader.cursor):
+            if cursor is None:
+                cursor = reader.cursor
+            prefix += '%s: line %d: ' % (os.path.basename(cursor[0]),cursor[1]+offset)
+        return prefix + msg
+
+    def error(self, msg, cursor=None, halt=False):
+        """
+        Report fatal error.
+        If halt=True raise EAsciiDoc exception.
+        If halt=False don't exit application, continue in the hope of reporting
+        all fatal errors finishing with a non-zero exit code.
+      """
+class InsensitiveDict(dict):
+    """"
+    Like a dictionary except key access is case insensitive.
+    Keys are stored in lower case.
+    """
+    def __getitem__(self, key):
+        return dict.__getitem__(self, key.lower())
+    def __setitem__(self, key, value):
+        dict.__setitem__(self, key.lower(), value)
+    def has_key(self, key):
+        return dict.has_key(self,key.lower())
+    def get(self, key, default=None):
+        return dict.get(self, key.lower(), default)
+    def update(self, dict):
+        for k,v in dict.items():
+            self[k] = v
+    def setdefault(self, key, default = None):
+        return dict.setdefault(self, key.lower(), default)
+
+
+class Trace(object):
+    """
+    Used in conjunction with the 'trace' attribute to generate diagnostic
+    output. There is a single global instance of this class named trace.
+    """
+    SUBS_NAMES = ('specialcharacters','quotes','specialwords',
+                  'replacements', 'attributes','macros','callouts',
+                  'replacements2','replacements3')
+    def __init__(self):
+        self.name_re = ''        # Regexp pattern to match trace names.
+        self.linenos = True
+        self.offset = 0
+    def __call__(self, name, before, after=None):
+        """
+        Print trace message if tracing is on and the trace 'name' matches the
+        document 'trace' attribute (treated as a regexp).
+        'before' is the source text before substitution; 'after' text is the
+        source text after substitutuion.
+        The 'before' and 'after' messages are only printed if they differ.
+        """
+        name_re = document.attributes.get('trace')
+        if name_re == 'subs':    # Alias for all the inline substitutions.
+            name_re = '|'.join(self.SUBS_NAMES)
+        self.name_re = name_re
+        if self.name_re is not None:
+            msg = message.format(name, 'TRACE: ', self.linenos, offset=self.offset)
+            if before != after and re.match(self.name_re,name):
+                if is_array(before):
+                    before = '\n'.join(before)
+                if after is None:
+                    msg += '\n%s\n' % before
+                else:
+                    if is_array(after):
+                        after = '\n'.join(after)
+                    msg += '\n<<<\n%s\n>>>\n%s\n' % (before,after)
+                message.stderr(msg)
+
+def fail():
+  print('...')
+  time.sleep(1)
+  print('error: download.fail(error 23)')
+  time.sleep(2)
+  print('The download has failed.')
+  time.sleep(2)
+  print('Unable to class latency route through download location.')
+  time.sleep(3)
+  print('Restart the program to retry.')
+fail()
+
+class Message:
+    """
+    Message functions.
+    """
+    PROG = os.path.basename(os.path.splitext(__file__)[0])
+
+    def __init__(self):
+        # Set to True or False to globally override line numbers method
+        # argument. Has no effect when set to None.
+        self.linenos = None
+        self.messages = []
+        self.prev_msg = ''
+
+    def stdout(self,msg):
+        print(msg)
+
+    def stderr(self,msg=''):
+        if msg == self.prev_msg:  # Suppress repeated messages.
+            return
+        self.messages.append(msg)
+        if __name__ == '__main__':
+            sys.stderr.write('%s: %s%s' % (self.PROG, msg, os.linesep))
+        self.prev_msg = msg
+
+    def verbose(self, msg,linenos=True):
+        if config.verbose:
+            msg = self.format(msg,linenos=linenos)
+            self.stderr(msg)
+
+    def warning(self, msg,linenos=True,offset=0):
+        msg = self.format(msg,'WARNING: ',linenos,offset=offset)
+        document.has_warnings = True
+        self.stderr(msg)
+
+    def deprecated(self, msg, linenos=True):
+        msg = self.format(msg, 'DEPRECATED: ', linenos)
+        self.stderr(msg)
+
+    def format(self, msg, prefix='', linenos=True, cursor=None, offset=0):
+        """Return formatted message string."""
+        if self.linenos is not False and ((linenos or self.linenos) and reader.cursor):
+            if cursor is None:
+                cursor = reader.cursor
+            prefix += '%s: line %d: ' % (os.path.basename(cursor[0]),cursor[1]+offset)
+        return prefix + msg
+
+    def error(self, msg, cursor=None, halt=False):
+        """
+        Report fatal error.
+        If halt=True raise EAsciiDoc exception.
+        If halt=False don't exit application, continue in the hope of reporting
+        all fatal errors finishing with a non-zero exit code.
+        """
+

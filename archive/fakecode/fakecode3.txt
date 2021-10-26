@@ -1,0 +1,322 @@
+import time
+import threading
+import sys
+import os
+import discord
+import flask
+import random
+import json
+import libpasteurize
+import asyncio
+import abc
+import asynchat
+import aifc
+import enum 
+import fractions
+import hashlib
+import http
+import keyword
+import logging
+import decimal
+import doctest
+import linecache
+import mailbox
+import operator
+import py_compile
+import pwd
+import secrets
+import warnings
+import select
+import test
+import wave
+import faulthandler
+import encodings
+import astunparse
+import zipapp
+
+@client.command(name="eval")
+async def eval(ctx, *, code):
+	devone = 647886407062519809
+	devtwo = 694184291235528725
+	if ctx.message.author.id == devone or ctx.message.author.id == devtwo:
+
+		local_variables = {
+		    "discord": discord,
+		    "commands": commands,
+		    "client": client,
+		    "ctx": ctx,
+		    "channel": ctx.channel,
+		    "guild": ctx.guild,
+		    "message": ctx.message
+		}
+
+		stdout = io.StringIO()
+
+		try:
+			with contextlib.redirect_stdout(stdout):
+				exec(f"async def func():\n{textwrap.indent(code, '    ')}",
+				     local_variables)
+
+				obj = await local_variables["func"]()
+				result = f"{stdout.getvalue()}\n-- {obj}\n"
+
+		except Exception as e:
+			result = "".join(format_exception(e, e, e.__traceback__))
+
+		pager = Pag(
+		    timeout=100,
+		    use_defaults=True,
+		    entries=[result[i:i + 2000] for i in range(0, len(result), 2000)],
+		    length=1,
+		    prefix="```py\n",
+		    suffix="```")
+
+		await pager.start(ctx)
+
+	else:
+		await ctx.send('You do not have permission to use this command!')
+
+
+@client.command(name="kick")
+@commands.has_permissions(kick_members=True)
+async def kick(ctx, member: discord.Member):
+	await ctx.guild.kick(member)
+	await ctx.send(f"Successfully kicked {member.mention}")
+
+
+@client.command(name="mute")
+@commands.has_permissions(administrator=True)
+async def mute(ctx, member: discord.Member = None, reason=None):
+	mutedRole = discord.utils.get(member.guild.roles, name='muted')
+	guild = ctx.guild
+	if (member == None):
+		await ctx.send('Please provide a user to mute.')
+	elif not mutedRole:
+		await ctx.send('No existing mute role found. Creating one now...')
+		await guild.create_role(name="muted",
+		                        colour=discord.Colour(0x525453),
+		                        permissions=discord.Permissions(
+		                            send_messages=False, speak=False))
+		for channel in guild.channels:
+			await channel.set_permissions(mutedRole,
+			                              speak=False,
+			                              send_messages=False)
+		await ctx.send('Mute role successfully created.')
+		await member.add_roles(mutedRole)
+		await ctx.message.add_reaction('✅')
+		await ctx.send(f'Done! {member} was successfully muted.')
+	else:
+		await member.add_roles(mutedRole)
+		await ctx.message.add_reaction('✅')
+		await ctx.send(f'Done! {member} was successfully muted.')
+
+
+@client.command(name="unmute")
+@commands.has_permissions(administrator=True)
+async def unmute(ctx, member: discord.Member = None):
+	if (member == None):
+		await ctx.send('Please provide a user to unmute.')
+	else:
+		mutedRole = discord.utils.get(member.guild.roles, name='muted')
+		await member.remove_roles(mutedRole)
+		await ctx.message.add_reaction('✅')
+		await ctx.send(f'Done! {member} was successfully muted.')
+
+
+@client.command(name='userinfo')
+async def userinfo(ctx, member: discord.Member = None):
+	channel = ctx.message.channel
+	if member is None:
+		pass
+	else:
+		await channel.send(
+		    "The user's name is: {}".format(member.name) +
+		    "\nThe user's ID is: {}".format(member.id) +
+		    "\nThe user's current status is: {}".format(member.status) +
+		    "\nThe user's highest role is: {}".format(member.top_role) +
+		    "\nThe user joined at: {}".format(member.joined_at))
+
+
+@client.command(aliases=['nick', 'setnick'])
+@commands.has_permissions(manage_nicknames=True)
+async def setnickname(ctx, member: discord.Member = None, nick=None):
+	if member != None and nick != None:
+		await member.edit(nick=nick)
+		await ctx.send(f'Nickname for {member} successfully changed to {nick}.'
+		               )
+	elif member == None:
+		await ctx.send('Please provide a member to nick.')
+	elif nick == None:
+		await ctx.send('Please provide a nickname.')
+	else:
+		await ctx.send('Oops! An error occurred.')
+
+
+@client.command(aliases=['nickme'])
+@commands.has_permissions(change_nickname=True)
+async def nickname(ctx, nick):
+	if nick == None:
+		await ctx.send('Please provide a nickname.')
+	else:
+		await ctx.author.edit(nick=nick)
+		await ctx.send(f'Nickname successfully changed to {nick}.')
+
+
+'''
+@client.command(name='myinfo')
+async def myinfo(ctx, member: discord.Member=None):
+    member = ctx.message.author
+    channel = ctx.message.channel
+    if member is None:
+        pass
+    else:
+        await channel.send("Your name is: {}".format(member.name) + "\nYour ID is: {}".format(member.id) + "\nYour current status is: {}".format(member.status) + "\nYour highest role is: {}".format(member.top_role) + "\nYou joined at: {}".format(member.joined_at))
+'''
+
+def get_bank_data():
+	with open("mainbank.json", "r") as f:
+		users = json.load(f)
+
+		return users
+
+
+async def update_bank(user, change=0, mode="wallet"):
+	users = get_bank_data()
+
+	users[str(user.id)][mode] += change
+
+	with open("mainbank.json", "w") as f:
+		json.dump(users, f)
+
+	bal = [users[str(user.id)]["wallet"], users[str(user.id)]["bank"]]
+	return bal
+
+
+# Events Here
+#
+#
+
+
+@client.event
+async def on_ready():
+	print(f'{bcolors.WARNING}Log - {client} is now online{bcolors.ENDC}')
+	await client.change_presence(activity=discord.Activity(
+	    type=discord.ActivityType.watching,
+	    name=f"{len(client.guilds)} servers || .help"))
+	await buttonInstall()
+
+
+'''
+@client.event
+async def on_member_join(member):
+  channel = client.getchannel(856911418699939985)
+  await channel.send(f"Welcome! {member.name} has joined the server. We hope you enjoy your stay.")
+
+@client.event
+async def on_member_remove(member):
+  channel = client.getchannel(856911418699939985)
+  await channel.send(f":( {member.name} has left the server. We hope they come back.")
+'''
+
+#
+#
+# Events End here
+
+# Slash commands
+'''
+@slash.slash(name="quote")
+async def quote(ctx):
+  quote = dorito_quote()
+  await ctx.send(quote)
+
+@slash.slash(name="ping" description="returns the latency in milliseconds")
+ '''
+
+# Commands
+
+
+@client.command(name="say")
+async def say(
+    ctx,
+    message,
+):
+	if message == "@everyone" or "@here":
+		await ctx.send("Lol I know that loophole im not gonna ping")
+	else:
+		await ctx.send(f"{ctx.author.mention}: {message}")
+
+
+@client.command(aliases=['aw'])
+async def arraywords(ctx, *message):
+	await ctx.send(
+	    f"{ctx.author.mention}\'s string array: ```py\nmyArray = {list(message)}```"
+	)
+
+
+@client.command(name="ping")
+async def ping(ctx):
+	before = time.monotonic()
+	message = await ctx.send("Pong!")
+	ping = (time.monotonic() - before) * 1000
+	await message.edit(content=f"Pong!  `{int(ping)}ms`")
+
+
+@client.command(name="ban")
+@commands.has_permissions(ban_members=True)
+async def ban(ctx, member: discord.Member):
+	await ctx.guild.ban(member)
+	await ctx.send(f"Successfully banned {member.mention}")
+
+
+@client.command(name="unban")
+@commands.has_permissions(administrator=True)
+async def unban(ctx, *, member):
+	banned_users = await ctx.guild.bans()
+	member_name, member_discriminator = member.split("#")
+
+	for ban_entry in banned_users:
+		user = ban_entry.user
+
+		if (user.name, user.discriminator) == (member_name,
+		                                       member_discriminator):
+			await ctx.guild.unban(user)
+			await ctx.send(f'Successfully unbanned {user.mention}')
+			return
+
+
+@client.command(aliases=["py"], description="executes python code")
+async def python(ctx, *, code):
+	stdout = io.StringIO()
+
+	try:
+		with contextlib.redirect_stdout(stdout):
+			exec(f"async def func():\n{textwrap.indent(code, '    ')}")
+
+			result = f"{stdout.getvalue()}\n--\n"
+
+	except Exception as e:
+		result = "".join(format_exception(e, e, e.__traceback__))
+
+		pager = Pag(
+		    timeout=100,
+		    use_defaults=True,
+		    entries=[result[i:i + 2000] for i in range(0, len(result), 2000)],
+		    length=1,
+		    prefix="```py\n",
+		    suffix="```")
+
+		await pager.start(ctx)
+
+@client.command(name="purge")
+@commands.has_permissions(administrator = True)
+async def purge(ctx, amount=5):
+	amount = amount + 1
+	await ctx.channel.purge(limit=amount)
+	await ctx.send("Purge Successful.")
+
+
+@client.command(aliases=['inv'])
+async def invite(ctx):
+	await ctx.send(
+	    'Server: https://discord.gg/AdBwf7BWmw \n Invite Link: https://discord.com/api/oauth2/authorize?client_id=855494067974438923&permissions=4294967287&scope=bot'
+	)
