@@ -10,6 +10,8 @@ except ImportError:
 	os.system('pip uninstall getch -y')
 	os.system('pip install getch')
 	import getch
+
+__all__ = ["Game"]
 	
 class Game():
 
@@ -17,7 +19,8 @@ class Game():
 		self.player = None
 		self.board_created = False
 		self.player_created = False
-		self.board_created
+		self.frames = 0
+		self.board_created = False
 		self.Entities = []
 		self.Removed_Entities = []
 
@@ -35,12 +38,19 @@ class Game():
 		self.quitaction_locals = local_variables
 			
 
-	def run(self, onkey=None, fixedupdate=None): #refactor so the game grabs the player object from self.Player.{property} instead of passing in parameters through Game.run() ------ fixedupdate must be fixed, is currently only called after a keypress
+	def run(self, on_key=None, update=None): #refactor so the game grabs the player object from self.Player.{property} instead of passing in parameters through Game.run() ------ fixedupdate must be fixed, is currently only called after a keypress
 		self.active = True
 		while self.active:
 			dr,dw,de = select([sys.stdin], [], [], 0)
 			
 			Console.clear()
+
+			try:
+				update()
+			except NameError:
+				pass
+			except TypeError:
+				pass
 			
 			board = self.board.board
 			player = self.player.player
@@ -73,7 +83,10 @@ class Game():
 						if i == pos[0] and j  == pos[1]:
 							pass
 						else:
-							board[i][j] = self.board.replacechar
+							if self.board.replacechar is None:
+								board[i][j] = self.board.get_default_board()[i][j]
+							else:
+								board[i][j] = self.board.replacechar
 
 			for i in range(0, len(board)):
 				for j in range(0, len(board[i])):
@@ -86,22 +99,22 @@ class Game():
 			if self.player.score != None and self.player.score_pos == 'bottom':
 				print(f'Score: {self.player.score}')
 
-			if dr == []:
-				if self.player.arrow_keys:
-					move = self.get_key()
-				else:
-					move = getch.getch()
+
+			if self.player.arrow_keys:
+				move = self.get_key()
 			else:
-				continue
+				move = getch.getch()
 			try:
-				onkey(move)
-			except:
+				on_key(move)
+			except NameError:
 				pass
+			except TypeError:
+				pass
+
+
+
 			
-			try:
-				fixedupdate()
-			except:
-				pass
+
 
 		
 			
@@ -145,7 +158,9 @@ class Game():
 				elif move == 'left' or move == 'a':
 					pos[1] -= 1
 					if pos[1] < 0:
-						pos[1]+=1		
+						pos[1]+=1
+			
+			self.frames+=1
 
 		if self.clear:
 			Console.clear()	
@@ -180,20 +195,18 @@ class Game():
 		return info
 
 	
-	def Board(self, gameboard, replacechar):
-		 #log all chars on board use for character replacement
+	def Board(self, gameboard):
 		if self.board_created:
 			raise duplicateBoardException(self.board)
 		else:
 			self.board_created = True
-			info = _Board(gameboard, replacechar)
+			info = _Board(gameboard)
 			self.board = info
 			return info
 
 		
 
-#change to methods for easy entity access
-class _Player(Game):
+class _Player():
 	def __init__(self, player_character, pos, score, score_pos, death_message, death_message_hold_time, arrowkeys=True, wasd=True, collideaction=None):
 		self.player = player_character
 		self.pos = pos
@@ -237,9 +250,9 @@ class _Entity():
 		self.action = collideaction
 
 class _Board():
-	def __init__(self, gameboard, replacechar):
+	def __init__(self, gameboard):
 		self.board = gameboard
-		self.replacechar = replacechar
+		self.replacechar = None
 		self.columns = len(gameboard[0])
 		self.rows = len(gameboard)
 		self.boardstring = ''
@@ -247,7 +260,7 @@ class _Board():
 			for j in range(0, self.columns):
 				self.boardstring+=self.board[i][j]
 	
-	def default_board(self):
+	def get_default_board(self):
 		gameboard = []
 		index = 0
 		for i in range(0, self.rows):
@@ -255,7 +268,18 @@ class _Board():
 			for j in range(0, self.columns):
 				gameboard[i].append(self.boardstring[index:index+1])
 				index+=1
-				
 
+		return gameboard
 
-#Must be fixed
+	def always_replace_with(self, char):
+		self.replacechar = char
+	
+	def replace_char(self, pos, char):
+		pos = pos[1]*(self.columns-1)
+		pos+=pos[2]
+		str1 = self.boardstring[pos-1]
+		str2 = self.boardstring[-pos]
+		str1+=char
+		self.boardstring = str1+str2
+
+	

@@ -1,4 +1,4 @@
-from os import system, walk, name
+from os import walk, name
 from os.path import join
 from everything.console import Console
 import time as t
@@ -15,7 +15,7 @@ def read(limit, directory=None, print_failures=True):
 	else:
 		cont = not print_failures
 		if directory == None:
-			directory = '/home/runner'
+			directory = '/home'
 		print('Starting file read\n\n')
 		t.sleep(3)
 

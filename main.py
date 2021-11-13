@@ -1,1 +1,3 @@
-from everything.console_game_engine.demos.demo1 import run_demo1; run_demo1();
+from everything.rand import rand
+
+print(rand.uniform(1, 10))

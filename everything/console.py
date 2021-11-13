@@ -68,7 +68,7 @@ class Console():
 		if log == True:
 			with open('debug.log', 'a') as f:
 				f.write(f'\n\nAt {datetime.datetime.now()} in file {filename}, line {line} - Debug: {message}')
-		print(f'{colors.WARNING}\nAt {datetime.datetime.now()}:\n	File {filename}, line {line} - Debug Log: {message}\n{colors.ENDC}')
+		print(f'{Colors.WARNING}\nAt {datetime.datetime.now()}:\n	File {filename}, line {line} - Debug Log: {message}\n{Colors.ENDC}')
 	
 	def deletelog():
 		os.remove('debug.log')
@@ -86,13 +86,13 @@ class Console():
 			indent+='	'
 		print(indent+message)
 
-	def exec(code = None, file = None, prefix = '\nEXEC START{\n', suffix = '\n}EXIT\n'):
+	def exec(code = None, source = None, prefix = '\nEXEC START{\n', suffix = '\n}EXIT\n'):
 		if code != None:
 			pass
-		elif file != None:
-			with open(file, 'r') as f:
+		elif source != None:
+			with open(source, 'r') as f:
 				code = f.read()
-		elif file == None and code == None:
+		elif source == None and code == None:
 			raise notEnoughInfoException
 		
 		print(prefix)
