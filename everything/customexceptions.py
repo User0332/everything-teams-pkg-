@@ -64,3 +64,11 @@ class StdErr1(Exception):
 		super().__init__(self.module)
 	def __str__(self):
 		return f'std namespace err1: {self.module} is not a valid python namespace'
+
+
+class MainEntryNotFoundError(Exception):
+	def __init__(self, filename):
+		self.filename = filename
+		super().__init__(self.filename)
+	def __str__(self):
+		return f'No main function suitable for an entry point found in file {self.filename}'

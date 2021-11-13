@@ -1,3 +1,54 @@
-from everything.rand import rand
+from everything.c_utils import run
+from stdio.h import *
 
-print(rand.uniform(1, 10))
+
+def main():
+	printf("Hello World")
+	return 0
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+run("main.py")
