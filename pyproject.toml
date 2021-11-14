@@ -6,7 +6,7 @@ authors = ["Your Name <you@example.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.8"
-msvcrt = "^0.5"
+msvcrt = "0.5"
 pygame = "^2.1.0"
 pytube = "^11.0.1"
 
