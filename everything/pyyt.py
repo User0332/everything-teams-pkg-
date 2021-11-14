@@ -1,10 +1,7 @@
 import os
 from everything.console.console import Console
-try:
-	from pytube import YouTube
-except ImportError:
-	os.system('pip install pytube')
-	from pytube import YouTube
+from pytube import YouTube
+
 
 Console.clear()
 
