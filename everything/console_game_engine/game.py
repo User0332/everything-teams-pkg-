@@ -7,9 +7,7 @@ from everything.console import Console
 try:
 	import getch
 except ImportError:
-	os.system('pip uninstall getch -y')
-	os.system('pip install getch')
-	import getch
+	import mscvrt as getch
 
 __all__ = ["Game"]
 	
