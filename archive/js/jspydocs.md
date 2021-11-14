@@ -1,1 +1,0 @@
-Keywords like function, try, and catch need to be in [] while in strings to print properly. If you are looking to execute the string, [] is not needed Otherwise, they will print the python counterpart. Keywords that are highlighted in blue do not need [] around them to print them properly. 
