@@ -1,0 +1,411 @@
+class letterCaseNotFoundException(Exception):
+	def __init__(self, lettercase, message='Case must be "upper", "lower", or "all"'):
+		self.lettercase = lettercase
+		self.message = message
+		super().__init__(self.message)
+	def __str__(self):
+		return f'Case was "{self.lettercase}" - {self.message}'
+
+class specialCharacterNotSpecifiedException(Exception):
+	def __init__(self, special, message='Special must be type bool - True or False'):
+		self.special = special
+		self.message = message
+		super().__init__(self.message)
+	def __str__(self):
+		return f'Special was "{self.special}" - {self.message}'
+
+class numberNotOperableException(Exception):
+	def __init__(self, message='Arguments must be int or float'):
+		self.message = message
+		super().__init__(self.message)
+	def __str__(self):
+		return f'Could not perform operation on argument - {self.message}'
+
+class notEnoughInfoException(Exception):
+	def __init__(self, message='Not enough information was given.'):
+		self.message = message
+		super().__init__(self.message)
+	def __str__(self):
+		return f'Could not perform specified function - {self.message}'
+
+from everything.customexceptions import *
+import random
+from everything.defaultarrays import upletters, lowletters, numbers, specialchars
+
+class Randomkey():
+	def mix(length, case, special):
+		try:
+			key = ''
+			if special == True:
+				if case == 'lower':
+					for i in range(0, length):
+						randomnum = random.randint(1,3)
+						if randomnum == 1:
+							key+=numbers[random.randint(0,len(numbers)-1)]
+						elif randomnum == 2:
+							if random.randint(1,2) == 1:
+								key+=lowletters[random.randint(0, len(lowletters)-1)]
+						else:
+							key+=specialchars[random.randint(0, len(specialchars)-1)]
+				elif case == 'upper':
+					for i in range(0, length):
+						randomnum = random.randint(1,3)
+						if randomnum == 1:
+							key+=numbers[random.randint(0,len(numbers))]
+						elif randomnum == 2:
+							if random.randint(1,2) == 1:
+								key+=upletters[random.randint(0, len(upletters)-1)]
+						else:
+							key+=specialchars[random.randint(0, len(specialchars)-1)]
+				elif case == 'all':
+					for i in range(0, length):
+						randomnum = random.randint(1,3)
+						if randomnum == 1:
+							key+=numbers[random.randint(0,len(numbers)-1)]
+						elif randomnum == 2:
+							if random.randint(1,2) == 1:
+								key+=upletters[random.randint(0, len(upletters)-1)]
+							else:
+								key+=lowletters[random.randint(0, len(lowletters)-1)]
+						else:
+							key+=specialchars[random.randint(0, len(specialchars)-1)]
+
+				else:
+					raise letterCaseNotFoundException(case)
+			elif special == False:
+				if case == 'lower':
+					for i in range(0, length):
+						if random.randint(1,2) == 1:
+							key+=numbers[random.randint(0,len(numbers)-1)]
+						else:
+							if random.randint(1,2) == 1:
+								key+=upletters[random.randint(0, len(upletters)-1)]
+							else:
+								key+=lowletters[random.randint(0, len(lowletters)-1)]
+				elif case == 'upper':
+					for i in range(0, length):
+						if random.randint(1,2) == 1:
+							key+=numbers[random.randint(0,len(numbers)-1)]
+						else:
+							if random.randint(1,2) == 1:
+								key+=upletters[random.randint(0, len(upletters)-1)]
+							else:
+								key+=lowletters[random.randint(0, len(lowletters))]
+				elif case == 'all':
+					for i in range(0, length):
+						if random.randint(1,2) == 1:
+							key+=numbers[random.randint(0,len(numbers)-1)]
+						else:
+							if random.randint(1,2) == 1:
+								key+=upletters[random.randint(0, len(upletters)-1)]
+							else:
+								key+=lowletters[random.randint(0, len(lowletters)-1)]
+				else:
+					raise letterCaseNotFoundException(case)
+			else:
+				raise specialCharacterNotSpecifiedException(special)
+			
+			return key
+		except letterCaseNotFoundException:
+			raise
+		except specialCharacterNotSpecifiedException:
+			raise
+		except Exception as e:
+			print(e)
+
+	def numbers(length):
+		try:
+			key = ''
+			for i in range(0, length):
+				key+=numbers[random.randint(0, len(numbers)-1)]
+
+			return key
+		except Exception as e:
+			print(e)
+	
+	def lowercase(length):
+		try:
+			key = ''
+			for i in range(0, length):
+				key+=lowletters[random.randint(0, len(lowletters)-1)]
+
+			return key
+		except Exception as e:
+			print(e)
+	
+	def uppercase(length):
+		try:
+			key = ''
+			for i in range(0, length):
+				key+=upletters[random.randint(0, len(upletters)-1)]
+
+			return key
+		except Exception as e:
+			print(e)
+
+	def chars(length):
+		try:
+			key = ''
+			for i in range(0, length):
+				key+=specialchars[random.randint(0, len(specialchars)-1)]
+
+			return key
+		except Exception as e:
+			print(e)
+
+	def letters(length):
+		try:
+			key = ''
+			for i in range(0, length):
+				if random.randint(1,2) == 1:
+					key+=upletters[random.randint(0, len(upletters)-1)]
+				else:
+					key+=lowletters[random.randint(0, len(lowletters)-1)]
+			
+			return key
+		except Exception as e:
+			print(e)
+
+	def numchars(length):
+		try:
+			key = ''
+			for i in range(0, length):
+				if random.randint(1,2) == 1:
+					key+=numbers[random.randint(0, len(numbers)-1)]
+				else:
+					key+=specialchars[random.randint(0, len(specialchars)-1)]
+			
+			return key
+		except Exception as e:
+			print(e)
+
+	def byte():
+		try:
+			key = ''
+			for i in range(0, 8):
+				key+=str(random.randint(0,1))
+			
+			return key
+
+		except Exception as e:
+			print(e)
+
+import os
+import datetime
+
+class Console():
+	def write(message):
+		print(message, end = '')
+		
+	def read(prompt, type = None):
+		if type == str:
+			return str(input(prompt))
+		elif type == int:
+			return int(input(prompt))
+		elif type == float:
+			return float(input(prompt))
+		elif type == complex:
+			return complex(input(prompt))
+		elif type == bool:
+			return bool(input(prompt))
+		else:
+			return input(prompt)
+
+	def clear():
+		if os.name == 'nt':
+			os.system('cls')
+		else:
+			os.system('clear')
+
+	def newlines(newlines):
+		for i in range(0, newlines):
+			print('')
+	
+	def fileread(file, splitlines = False):
+		if splitlines == True:
+			with open(file, 'r') as f:
+				data = f.read().splitlines()
+				return data
+		elif splitlines == False:
+			with open(file, 'r') as f:
+				data = f.read()
+				return data
+	
+	def filereadprint(file, splitlines = False, index=0):
+		if splitlines == True:
+			with open(file, 'r') as f:
+				data = f.read().splitlines()
+				print(data[index])
+		elif splitlines == False:
+			with open(file, 'r') as f:
+				data = f.read()
+				print(data)
+	
+	def printlist(var):
+		print(list(var))
+	
+	def error(error):
+			raise error
+
+	def exception(exception):
+			raise exception
+
+	def debug(message, filename, line, log = False):
+		if log == True:
+			with open('debug.log', 'a') as f:
+				f.write(f'\n\nAt {datetime.datetime.now()} in file {filename}, line {line} - Debug: {message}')
+		print(f'{colors.WARNING}\nAt {datetime.datetime.now()}:\n	File {filename}, line {line} - Debug Log: {message}\n{colors.ENDC}')
+	
+	def deletelog():
+		os.remove('debug.log')
+
+	def clearlog():
+		with open('debug.log', 'a') as f:
+			pass
+		os.remove('debug.log')
+		with open('debug.log', 'a') as f:
+			pass
+		
+	def indent(message, indents):
+		indent = ''
+		for i in range(0, indents):
+			indent+='	'
+		print(indent+message)
+
+	def exec(code = None, file = None, prefix = '\nEXEC START{\n', suffix = '\n}EXIT\n'):
+		if code != None:
+			pass
+		elif file != None:
+			with open(file, 'r') as f:
+				code = f.read()
+		elif file == None and code == None:
+			raise notEnoughInfoException()
+		
+		print(prefix)
+		exec(code)
+		print(suffix)
+
+from javascript import *
+
+def code_format(jscode):
+	jscode = jscode.replace(';', '')
+	jscode = jscode.replace('[function]', '@<111>#')
+	jscode = jscode.replace('[catch]', '@<112>#')
+	jscode = jscode.replace('[throw]', '@<113>#')
+	jscode = jscode.replace('dict{', '@<114>#')
+	jscode = jscode.replace('}dict', '@<115>#')
+	jscode = jscode.replace('array{', '@<116>#')
+	jscode = jscode.replace('}array', '@<117>#')
+	jscode = jscode.replace('[constructor]', '@<118>#')
+	jscode = jscode.replace('{', ':')
+	for i in range(0, jscode.count('}')):
+		try:
+			index = jscode.index('}')
+			jscode = jscode.replace('}', '', 1)
+			counter = index
+			while True:
+				if jscode[counter] == ' ':
+					jscodelist = list(jscode)
+					jscodelist[counter] = ''
+					jscode = ''
+					for i in range(0, len(jscodelist)):
+						jscode += jscodelist[i]
+				else:
+					break
+		except:
+			pass
+	jscode = jscode.replace('function', 'def')
+	jscode = jscode.replace('catch', 'except')
+	jscode = jscode.replace('throw', 'raise')
+	jscode = jscode.replace('this.', 'self.')
+	jscode = jscode.replace('constructor(', 'def __init__(self,')
+	for i in range(0, jscode.count('var')):
+		try:
+			index = jscode.index('var')
+			jscode = jscode.replace('var', '', 1)
+			counter = index
+			while True:
+				if jscode[counter] == ' ':
+					jscodelist = list(jscode)
+					jscodelist[counter] = ''
+					jscode = ''
+					for i in range(0, len(jscodelist)):
+						jscode += jscodelist[i]
+				else:
+					break
+		except:
+			pass
+	jscode = jscode.replace('//', '#')
+	jscode = jscode.replace('/*', "'''")
+	jscode = jscode.replace('*/', "'''")
+	jscode = jscode.replace('@<112>#', 'catch')
+	jscode = jscode.replace('@<113>#', 'throw')
+	jscode = jscode.replace('@<111>#', 'function')
+	jscode = jscode.replace('@<114>#', '{')
+	jscode = jscode.replace('@<115>#', '}')
+	jscode = jscode.replace('@<116>#', '[')
+	jscode = jscode.replace('@<117>#', ']')
+	return jscode
+
+
+
+
+def run():
+	with open('js/js_test.py', 'r') as f:
+		code = f.read()
+
+	local_vars = {'console' : console}
+
+	code = code_format(code)
+
+	exec(code, local_vars)
+
+class file():
+	def __init__(self, filename):
+		self.filename = filename
+
+
+	def read(self, splitlines = False):
+		with open(self.filename, 'r') as f:
+			if splitlines == True:
+				return f.read().splitlines()
+			else:
+				return f.read()
+
+	def write(self, text):
+		with open(self.filename, 'w') as f:
+			f.write(text)
+	
+	def append(self, text):
+		with open(self.filename, 'a') as f:
+			f.write(text)
+
+import os
+from everything.console import Console
+try:
+	from pytube import YouTube
+except ImportError:
+	os.system('pip install pytube')
+	from pytube import YouTube
+
+Console.clear()
+
+class pyyt():
+	def download(link):
+		try:
+			yt = YouTube(link)
+			yt.streams.get_highest_resolution().download()
+		except Exception as e:
+			print(e)
+	def stats(link):
+		try:
+			yt = YouTube(link)
+			stats = {
+							'title' : yt.title,
+							'description' : yt.description,
+							'views' : yt.views,
+							'rating' : yt.rating
+							 }
+			return stats
+		except Exception as e:
+			print(e)
