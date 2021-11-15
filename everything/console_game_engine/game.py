@@ -6,7 +6,7 @@ from everything.customexceptions import duplicatePlayerException, duplicateBoard
 from everything.console import Console
 try:
 	import getch
-except ImportError:
+except ModuleNotFoundError:
 	import mscvrt as getch
 
 __all__ = ["Game"]
