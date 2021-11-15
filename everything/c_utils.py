@@ -13,7 +13,7 @@ def run(filename):
 		else:
 			exit(exit_code)
 	except AttributeError as e:
-		if str(e) == "partially initialized module 'main' has no attribute 'main' (most likely due to a circular import)":
+		if str(e) == f"partially initialized module '{filename[0:-3]}' has no attribute 'main' (most likely due to a circular import)":
 			raise MainEntryNotFoundError(filename)
 		else:
 			raise e
